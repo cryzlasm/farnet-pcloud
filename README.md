@@ -1,5 +1,12 @@
 # farnet-acd
-Experimental Amazon Cloud Drive FarNet module
+Experimental pCloud FarNet module
+
+## What and why
+This module is based on the Amazon Cloud Drive FarNet module (and is a hard fork of it). 
+As Amazon is not willing to provide public API for the users of their service, the original module now makes no sense. 
+PCloud seems to be more loyal to their users in this sense.
+
+Yet, as this plugin is based on the ACD FarNet module there still lots of signs of Amazon, but in fact this plugin does not have anything common with Amazon Cloud Drive anymore (except common roots with the original module).
 
 ## TODO
 * F6 support from and to the module panel
@@ -15,5 +22,4 @@ Experimental Amazon Cloud Drive FarNet module
 * Trash display
 * Support for untrashing files
 * Folder Tree display
-* Multiple ACD accounts support
-* Multiple services support (not just ACD)
+* Multiple pCloud accounts support
