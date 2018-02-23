@@ -7,8 +7,8 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{BE8CA25E-3E8D-4180-BAB2-C0A68349D8DA}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>FarNet.ACD</RootNamespace>
-    <AssemblyName>FarNet.ACD</AssemblyName>
+    <RootNamespace>FarNet.PCloud</RootNamespace>
+    <AssemblyName>FarNet.PCloud</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
@@ -32,7 +32,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <DocumentationFile>bin\Release\FarNet.ACD.XML</DocumentationFile>
+    <DocumentationFile>bin\Release\FarNet.PCloud.XML</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
@@ -93,9 +93,9 @@
     <Install Condition="'$(Install)' == ''">$(FARHOME)\FarNet\Modules</Install>
   </PropertyGroup>
   <Target Name="Resources">
-    <GenerateResource Sources="FarNet.ACD.restext;FarNet.ACD.ru.restext" OutputResources="Bin\$(Configuration)\FarNet.ACD.resources;Bin\$(Configuration)\FarNet.ACD.ru.resources" />
+    <GenerateResource Sources="FarNet.PCloud.restext;FarNet.PCloud.ru.restext" OutputResources="Bin\$(Configuration)\FarNet.PCloud.resources;Bin\$(Configuration)\FarNet.PCloud.ru.resources" />
   </Target>
   <Target Name="AfterBuild" DependsOnTargets="Resources">
-    <Copy SourceFiles="@(Content);Bin\$(Configuration)\$(AssemblyName).dll;Bin\$(Configuration)\AmazonCloudDriveApi.dll;;Bin\$(Configuration)\Newtonsoft.Json.dll;Bin\$(Configuration)\FarNet.ACD.resources;Bin\$(Configuration)\FarNet.ACD.ru.resources" DestinationFolder="$(Install)\$(AssemblyName)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(Content);Bin\$(Configuration)\$(AssemblyName).dll;Bin\$(Configuration)\AmazonCloudDriveApi.dll;;Bin\$(Configuration)\Newtonsoft.Json.dll;Bin\$(Configuration)\FarNet.PCloud.resources;Bin\$(Configuration)\FarNet.PCloud.ru.resources" DestinationFolder="$(Install)\$(AssemblyName)" SkipUnchangedFiles="true" />
   </Target>
 </Project>

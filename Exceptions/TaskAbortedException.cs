@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FarNet.ACD.Exceptions
+namespace FarNet.PCloud.Exceptions
 {
     class TaskAbortedException: TaskCanceledException
     {

@@ -4,7 +4,8 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Configuration;
 using FarNet.Settings;
-namespace FarNet.ACD
+
+namespace FarNet.PCloud
 {
 	/// <summary>
 	/// Settings set 1.
@@ -14,15 +15,15 @@ namespace FarNet.ACD
 	[SettingsProvider(typeof(ModuleSettingsProvider))]
 	public class ACDSettings : ModuleSettings
 	{
-		#region [Default]
-		/// <summary>
-		/// The only settings instance.
-		/// Normally settings are created once, when needed.
-		/// </summary>
-		/// <remarks>
-		/// Use <see cref="SettingsBase.Synchronized"/> in multithreaded scenarious, see <see cref="Settings2._Default"/>.
-		/// </remarks>
-		static readonly ACDSettings _Default = new ACDSettings();
+        #region [Default]
+        /// <summary>
+        /// The only settings instance.
+        /// Normally settings are created once, when needed.
+        /// </summary>
+        /// <remarks>
+        /// Use <see cref="SettingsBase.Synchronized"/> in multithreaded scenarious, see <see cref="ACDSettings._Default"/>.
+        /// </remarks>
+        static readonly ACDSettings _Default = new ACDSettings();
 		/// <summary>
 		/// Gets the public access to the settings instance.
 		/// It is used for example by the core in order to open the settings panel.
@@ -74,29 +75,6 @@ namespace FarNet.ACD
         {
             get { return (string)this["AuthToken"]; }
             set { this["AuthToken"] = value; }
-        }
-        /// <summary>
-        /// AuthRenewToken.
-        /// </summary>
-		//[Browsable(false)]
-        [UserScopedSetting]
-        public string AuthRenewToken
-        {
-            get { return (string)this["AuthRenewToken"]; }
-            set { this["AuthRenewToken"] = value; }
-        }
-        #endregion
-        #region [DateTime]
-        /// <summary>
-        /// AuthTokenExpiration.
-        /// </summary>
-		//[Browsable(false)]
-        [UserScopedSetting]
-        [DefaultSettingValue("2000-11-22")]
-        public DateTime AuthTokenExpiration
-        {
-            get { return (DateTime)this["AuthTokenExpiration"]; }
-            set { this["AuthTokenExpiration"] = value; }
         }
         #endregion
     }

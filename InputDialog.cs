@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using FarNet;
 using FarNet.Forms;
 
-namespace FarNet.ACD
+namespace FarNet.PCloud
 {
     class InputDialog
     {

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FarNet.ACD
+namespace FarNet.PCloud
 {
     class Progress
     {
@@ -62,8 +62,11 @@ namespace FarNet.ACD
         /// </summary>
         /// <param name="src"></param>
         /// <param name="position"></param>
-        /// <param name="totalBytes"></param>
         /// <param name="itemLength"></param>
+        /// <param name="totalProgress"></param>
+        /// <param name="totalSize"></param>
+        /// <param name="tsStartOne"></param>
+        /// <param name="tsStartAll"></param>
         /// <returns></returns>
         public static string GetActivityProgress(string src, long position, long itemLength, long totalProgress, long totalSize, int tsStartOne = 0, int tsStartAll = 0)
         {

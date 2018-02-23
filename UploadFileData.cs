@@ -1,6 +1,6 @@
 ﻿using System.Threading;
 
-namespace FarNet.ACD
+namespace FarNet.PCloud
 {
     class UploadFileData
     {

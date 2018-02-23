@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.Collections;
 
-namespace FarNet.ACD
+namespace FarNet.PCloud
 {
 	/// <summary>
 	/// User actions.
@@ -18,6 +18,9 @@ namespace FarNet.ACD
 		Enter
 	}
 
+    /// <summary>
+    /// TODO
+    /// </summary>
     public sealed class ACDPanel : Panel
     {
         /// <summary>
@@ -109,6 +112,11 @@ namespace FarNet.ACD
             DoExplored((ACDExplorer)explorer);
         }
 
+        /// <summary>
+        /// TODO
+        /// </summary>
+        /// <param name="key"></param>
+        /// <returns></returns>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
         public override bool UIKeyPressed(KeyInfo key)
         {
@@ -352,7 +360,7 @@ namespace FarNet.ACD
         /// <param name="explorer"></param>
         private void DoExplored(ACDExplorer explorer)
         {
-            Title = "ACD: " + Explorer.Location;
+            Title = "pCloud: " + Explorer.Location;
             CurrentLocation = Explorer.Location;
             Log.Source.TraceInformation("Title: {0}; CurrentLocation: {1}", Title, CurrentLocation);
 

@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 using FarNet;
 using FarNet.Forms;
 
-namespace FarNet.ACD
+namespace FarNet.PCloud
 {
 	/// <summary>
 	/// Provides a menu item in all plugin menus.
@@ -18,7 +18,7 @@ namespace FarNet.ACD
 	/// The attribute property <c>Name</c> is treated as a resource (due to the <c>Resources</c> flag).
 	/// </remarks>
 	[ModuleTool(Name = "MenuTitle", Options = ModuleToolOptions.Disk, Resources = true)]
-	[Guid("80e3e2d1-b0b1-4329-89dc-b3a51309bccb")]
+	[Guid("80e3e2d1-b0b1-4329-89dc-b3a51309bccc")]
 	public class ACDTool : ModuleTool
 	{
         internal void DisplayError(string Error)

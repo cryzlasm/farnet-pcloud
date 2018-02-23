@@ -6,12 +6,20 @@ using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 
-namespace FarNet.ACD
+namespace FarNet.PCloud
 {
+    /// <summary>
+    /// TODO
+    /// </summary>
     public static class Utility
     {
         internal static DateTime _1900101 = new DateTime(1970, 1, 1);
 
+        /// <summary>
+        /// TODO
+        /// </summary>
+        /// <param name="byteCount"></param>
+        /// <returns></returns>
         public static string BytesToString(long byteCount)
         {
             string Result;
@@ -35,6 +43,11 @@ namespace FarNet.ACD
             return Result;
         }
 
+        /// <summary>
+        /// TODO
+        /// </summary>
+        /// <param name="bps"></param>
+        /// <returns></returns>
         public static string BPSToString(long bps)
         {
             string Result;
@@ -55,6 +68,12 @@ namespace FarNet.ACD
             return Result;
         }
 
+        /// <summary>
+        /// TODO
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="recursion"></param>
+        /// <returns></returns>
         public static string var_dump(object obj, int recursion)
         {
             StringBuilder result = new StringBuilder();
@@ -170,6 +189,7 @@ namespace FarNet.ACD
         /// Source: http://stackoverflow.com/questions/1344221/how-can-i-generate-random-alphanumeric-strings-in-c
         /// </summary>
         /// <param name="length"></param>
+        /// <param name="chars"></param>
         /// <returns></returns>
         public static string RandomString(int length, string chars = "abcdefghijklmnopqrstuvwxyz0123456789")
         {
@@ -253,6 +273,12 @@ namespace FarNet.ACD
             return string.Join(Environment.NewLine, WrapLineToList(line, maxLength));
         }
 
+        /// <summary>
+        /// TODO
+        /// </summary>
+        /// <param name="line"></param>
+        /// <param name="maxLength"></param>
+        /// <returns></returns>
         public static List<string> WrapLineToList(string line, int maxLength = 80)
         {
             var words = line.Split(' ');
@@ -319,7 +345,7 @@ namespace FarNet.ACD
         /// <summary>
         /// Gets the size of the longest line in the text
         /// </summary>
-        /// <param name="text"></param>
+        /// <param name="lines"></param>
         /// <returns></returns>
         public static int GetTextWidth(List<string> lines)
         {

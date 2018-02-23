@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Threading;
 using Azi.Amazon.CloudDrive.JsonObjects;
 
-namespace FarNet.ACD
+namespace FarNet.PCloud
 {
     class FSItem
     {
@@ -76,14 +76,14 @@ namespace FarNet.ACD
         {
             return new FSItem
             {
-                Length = node.contentProperties?.size ?? 0,
-                Id = node.id,
+                Length = node.size ?? 0,
+                Id = node.isfolder ? node.folderid.ToString() : node.fileid.ToString(),
                 Path = itemPath,
-                IsDir = node.kind == AmazonNodeKind.FOLDER,
-                CreationTime = node.createdDate,
-                LastAccessTime = node.modifiedDate,
-                LastWriteTime = node.modifiedDate,
-                ParentIds = new ConcurrentBag<string>(node.parents)
+                IsDir = node.isfolder,
+                CreationTime = node.created,
+                LastAccessTime = node.modified,
+                LastWriteTime = node.modified,
+                // ParentIds = new ConcurrentBag<string>(node.parents)
             };
         }
 

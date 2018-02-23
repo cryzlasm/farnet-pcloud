@@ -11,7 +11,7 @@ using Azi.Amazon.CloudDrive;
 using Azi.Amazon.CloudDrive.JsonObjects;
 using Newtonsoft.Json;
 
-namespace FarNet.ACD
+namespace FarNet.PCloud
 {
     /// <summary>
     /// TODO
@@ -48,24 +48,19 @@ namespace FarNet.ACD
         {
             var Settings = ACDSettings.Default;
 
-            //var settings = Gui.Properties.Settings.Default;
+            if (Settings.AuthToken != null)
+            {
+                Authenticated = true;
+                var token = new AuthToken();
+                token.access_token = Settings.AuthToken;
+                amazon = new AmazonDrive(Settings.ClientId, Settings.ClientSecret, token);
+                return amazon;
+            }
+
             amazon = new AmazonDrive(Settings.ClientId, Settings.ClientSecret);
             amazon.OnTokenUpdate = this;
 
-            if (!string.IsNullOrWhiteSpace(Settings.AuthRenewToken))
-            {
-                if (await amazon.AuthenticationByTokens(
-                    Settings.AuthToken,
-                    Settings.AuthRenewToken,
-                    Settings.AuthTokenExpiration))
-                {
-                    Authenticated = true;
-                    return amazon;
-                }
-            }
-
-
-            if (await amazon.AuthenticationByExternalBrowser(CloudDriveScopes.ReadAll | CloudDriveScopes.Write, TimeSpan.FromMinutes(2), cs, "http://localhost:{0}/signin/"))
+            if (await amazon.AuthenticationByExternalBrowser(TimeSpan.FromMinutes(2), cs, "http://localhost:{0}/signin/"))
             {
                 Authenticated = true;
                 return amazon;
@@ -78,6 +73,7 @@ namespace FarNet.ACD
         /// TODO
         /// </summary>
         /// <param name="itemPath"></param>
+        /// <param name="CacheBypass"></param>
         /// <returns></returns>
         public async Task<FSItem> FetchNode(string itemPath, bool CacheBypass = false)
         {
@@ -92,59 +88,28 @@ namespace FarNet.ACD
                 return item;
             }
 
-            if (itemPath == "\\" || itemPath == string.Empty)
+            if (itemPath == string.Empty)
             {
-                item = FSItem.FromRoot(await amazon.Nodes.GetRoot());
-                CacheStorage.AddItem(item);
-                return item;
+                itemPath = "\\";
             }
 
-            var folders = new LinkedList<string>();
-            var curpath = itemPath;
+            AmazonNode node;
+            // try as a directory
+            node = await amazon.Nodes.GetNodeByPath(itemPath, true);
 
-            do
+            if (node == null)
             {
-                folders.AddFirst(Path.GetFileName(curpath));
-                curpath = Path.GetDirectoryName(curpath);
-                if (curpath == "\\" || string.IsNullOrEmpty(curpath))
+                // try as a file
+                node = await amazon.Nodes.GetNodeByPath(itemPath, false);
+
+                if (node == null)
                 {
-                    break;
+                    return null;
                 }
-            } while (true);
-
-            item = FSItem.FromRoot(await amazon.Nodes.GetRoot());
-
-            foreach (var name in folders)
-            {
-                if (curpath == "\\")
-                {
-                    curpath = string.Empty;
-                }
-
-                curpath = curpath + "\\" + name;
-
-                FSItem nextitem = null;
-                if (!CacheBypass)
-                {
-                    nextitem = CacheStorage.GetItemByPath(curpath);
-                }
-
-                if (nextitem == null)
-                {
-
-                    var newnode = await amazon.Nodes.GetChild(item.Id, name);
-                    if (newnode == null || newnode.status != AmazonNodeStatus.AVAILABLE)
-                    {
-                        // Log.Error("NonExisting path from server: " + itemPath);
-                        return null;
-                    }
-
-                    nextitem = FSItem.FromNode(curpath, newnode);
-                    CacheStorage.AddItem(nextitem);
-                }
-
-                item = nextitem;
             }
+
+            item = FSItem.FromNode(itemPath, node);
+            CacheStorage.AddItem(item);
 
             return item;
         }
@@ -163,25 +128,19 @@ namespace FarNet.ACD
                 return items;
             }
 
-            var folderNode = await FetchNode(folderPath);
+            var node = await amazon.Nodes.GetNodeByPath(folderPath, true);
 
-            var nodes = await amazon.Nodes.GetChildren(folderNode?.Id);
-            items = new List<FSItem>(nodes.Count);
-            var curdir = folderPath;
-            if (curdir == "\\")
+            if (node == null || node.contents.Count == 0)
             {
-                curdir = string.Empty;
+                items = new List<FSItem>(0);
+                return items;
             }
 
-            foreach (var node in nodes.Where(n => FsItemKinds.Contains(n.kind)))
-            {
-                if (node.status != AmazonNodeStatus.AVAILABLE)
-                {
-                    continue;
-                }
+            items = new List<FSItem>(node.contents.Count);
 
-                var path = curdir + "\\" + node.name;
-                items.Add(FSItem.FromNode(path, node));
+            foreach (var subnode in node.contents)
+            {
+                items.Add(FSItem.FromNode(node.path.TrimEnd('/') + "/" + subnode.name, subnode));
             }
 
             CacheStorage.AddItems(folderPath, items);
@@ -195,6 +154,9 @@ namespace FarNet.ACD
         /// <param name="item"></param>
         /// <param name="dest"></param>
         /// <param name="form"></param>
+        /// <param name="wh"></param>
+        /// <param name="progress"></param>
+        /// <param name="totalsize"></param>
         /// <returns></returns>
         public async Task<long> DownloadFile(FSItem item, string dest, Tools.ProgressForm form, EventWaitHandle wh, long progress, long totalsize)
         {
@@ -237,13 +199,12 @@ namespace FarNet.ACD
         /// TODO
         /// </summary>
         /// <param name="item"></param>
-        /// <param name="dest"></param>
         /// <param name="form"></param>
         /// <returns></returns>
         public async Task DeleteFile(FSItem item, Tools.ProgressForm form)
         {
             form.Activity = Utility.ShortenString(item.Path, 20);
-            await amazon.Nodes.Trash(item.Id);
+            await amazon.Nodes.Trash(item.Id, item.IsDir);
 
             CacheStorage.RemoveItem(item);
         }
@@ -251,9 +212,9 @@ namespace FarNet.ACD
         /// <summary>
         /// TODO
         /// </summary>
-        /// <param name="item"></param>
-        /// <param name="dest"></param>
-        /// <param name="form"></param>
+        /// <param name="filePath"></param>
+        /// <param name="parent"></param>
+        /// <param name="allowExisting"></param>
         /// <returns></returns>
         public async Task<FSItem> CreateDirectory(string filePath, FSItem parent = null, bool allowExisting = true)
         {
@@ -278,7 +239,6 @@ namespace FarNet.ACD
 
             var name = Path.GetFileName(filePath);
             AmazonNode node = null;
-            string nodeId = null;
 
             try
             {
@@ -290,22 +250,23 @@ namespace FarNet.ACD
                 {
                     if (!allowExisting)
                     {
-                        throw x;
+                        throw;
                     }
-                    var resp = new StreamReader((x.InnerException as System.Net.WebException).Response.GetResponseStream()).ReadToEnd();
-
-                    dynamic obj = JsonConvert.DeserializeObject(resp);
-                    nodeId = obj.info.nodeId.Value;
                 }
                 else
                 {
-                    throw x;
+                    throw;
                 }
             }
 
-            if (nodeId != null) // in case of duplicate
+            if (node == null) // in case of duplicate; other cases are re-thrown
             {
-                node = await amazon.Nodes.GetNode(nodeId);
+                node = await amazon.Nodes.GetNodeByPath(filePath, true);
+            }
+
+            if (node == null)
+            {
+                throw new InvalidOperationException("Could not retrieve node information " + filePath);
             }
 
             var item = FSItem.FromNode(filePath, node);
@@ -318,9 +279,7 @@ namespace FarNet.ACD
         /// <summary>
         /// TODO
         /// </summary>
-        /// <param name="parentItem"></param>
-        /// <param name="src"></param>
-        /// <param name="form"></param>
+        /// <param name="FileData"></param>
         /// <returns></returns>
         public async Task<long> UploadNewFile(UploadFileData FileData)
         {
@@ -328,7 +287,7 @@ namespace FarNet.ACD
             var totalBytes = Utility.BytesToString(itemLength);
             var filename = Path.GetFileName(FileData.File.Name);
             var fileUpload = new FileUpload();
-            fileUpload.AllowDuplicate = true;
+            fileUpload.AllowDuplicate = false;
             fileUpload.ParentId = FileData.ParentItem.Id;
             fileUpload.FileName = filename;
             fileUpload.StreamOpener = () => new FileStream(FileData.File.Name, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, true);
@@ -356,19 +315,24 @@ namespace FarNet.ACD
                 cs.Cancel(true);
             };
 
-            var node = await amazon.Files.UploadNew(fileUpload);
+            var result = await amazon.Files.UploadNew(fileUpload);
 
-            CacheStorage.AddItem(FSItem.FromNode(Path.Combine(FileData.ParentItem.Path, filename), node));
+            foreach (var node in result.metadata)
+            {
+                CacheStorage.AddItem(FSItem.FromNode(Path.Combine(FileData.ParentItem.Path, filename), node));
+                if (node.size != null)
+                {
+                    FileData.TotalProgress += node.size.Value;
+                }
+            }
 
-            return FileData.TotalProgress + node.Length;
+            return FileData.TotalProgress /*+ node.Length*/;
         }
 
         /// <summary>
         /// TODO
         /// </summary>
-        /// <param name="parentItem"></param>
-        /// <param name="src"></param>
-        /// <param name="form"></param>
+        /// <param name="FileData"></param>
         /// <returns></returns>
         public async Task<long> ReplaceFile(UploadFileData FileData)
         {
@@ -378,7 +342,7 @@ namespace FarNet.ACD
             var cs = new CancellationTokenSource();
             var token = cs.Token;
             fileUpload.CancellationToken = token;
-            fileUpload.AllowDuplicate = true;
+            fileUpload.AllowDuplicate = false;
             fileUpload.ParentId = FileData.ParentItem.Id;
 
             var ACDFilePath = FileData.RemoteFileName;
@@ -392,7 +356,7 @@ namespace FarNet.ACD
             {
                 throw new FileNotFoundException("Remote file " + ACDFilePath + " not found");
             }
-            fileUpload.FileName = node.Id;
+            fileUpload.FileName = node.Name;
 
             fileUpload.StreamOpener = () => new FileStream(FileData.File.Name, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 4096, true);
             fileUpload.Progress = (long position) =>
@@ -416,11 +380,14 @@ namespace FarNet.ACD
                 cs.Cancel(true);
             };
 
-            var resultNode = await amazon.Files.Overwrite(fileUpload);
+            var result = await amazon.Files.Overwrite(fileUpload);
 
-            CacheStorage.AddItem(FSItem.FromNode(ACDFilePath, resultNode));
+            foreach (var newNode in result.metadata)
+            {
+                CacheStorage.AddItem(FSItem.FromNode(Path.Combine(FileData.ParentItem.Path, filename), newNode));
+            }
 
-            return FileData.TotalProgress + resultNode.Length;
+            return FileData.TotalProgress /* + resultNode.Length */;
         }
         
         /// <summary>
@@ -459,7 +426,7 @@ namespace FarNet.ACD
                 return false; // TODO: throw an exception
             }
 
-            await amazon.Nodes.Move(item.Id, item.ParentIds.First(), newParentNode.Id);
+            await amazon.Nodes.Move(item.Id, newParentNode.Id, item.IsDir);
 
             CacheStorage.RemoveItem(item);
             CacheStorage.RemoveItems(newParentNode.Path);
@@ -481,11 +448,11 @@ namespace FarNet.ACD
             }
 
             // 1. Is newName a folder?
-            var newParentNode = await FetchNode(newName);
-            if (newParentNode != null)
-            {
-                return await MoveFile(item, newParentNode);
-            }
+            // var newParentNode = await FetchNode(newName);
+            // if (newParentNode != null)
+            // {
+            //    return await MoveFile(item, newParentNode);
+            // }
 
             // 2. Is newName a file in the same dir?
             var destination = Path.GetDirectoryName(newName);
@@ -493,7 +460,7 @@ namespace FarNet.ACD
             if (destination == "")
             {
                 CacheStorage.RemoveItems(item.Dir); // invalidate parent path
-                await amazon.Nodes.Rename(item.Id, newName);
+                await amazon.Nodes.Rename(item.Id, newName, item.IsDir);
                 return true;
             }
 
@@ -506,10 +473,19 @@ namespace FarNet.ACD
 
             // 2.2 Is destination the same as the directory name of the item?
             var filename = Path.GetFileName(newName);
+            if (filename == "")
+            {
+                filename = item.Name;
+            }
             if (destination == item.Dir)
             {
+                // cannot rename to myself
+                if (filename == item.Name)
+                {
+                    return true;
+                }
                 CacheStorage.RemoveItems(item.Dir); // invalidate parent path
-                await amazon.Nodes.Rename(item.Id, filename);
+                await amazon.Nodes.Rename(item.Id, filename, item.IsDir);
                 return true;
             }
 
@@ -529,11 +505,11 @@ namespace FarNet.ACD
             var tmpFilename = string.Format("{0}.{1}.{2}", filenameWithoutExtension, randomString, extension);
 
             // 3.1 Rename to a temporary name
-            await amazon.Nodes.Rename(item.Id, tmpFilename);
+            await amazon.Nodes.Rename(item.Id, tmpFilename, item.IsDir);
             // 3.2 Move to the new destination
-            await amazon.Nodes.Move(item.Id, item.ParentIds.First(), destinationNode.Id);
+            await amazon.Nodes.Move(item.Id, destinationNode.Id, item.IsDir);
             // 3.3 Rename back to the original name
-            await amazon.Nodes.Rename(item.Id, filename); // TODO: catch exceptions and try to rename again
+            await amazon.Nodes.Rename(item.Id, filename, item.IsDir); // TODO: catch exceptions and try to rename again
 
             CacheStorage.RemoveItems(item.Dir); // invalidate parent path
             CacheStorage.RemoveItems(destinationNode.Path); // invalidate new parent path
@@ -545,14 +521,10 @@ namespace FarNet.ACD
         /// TODO
         /// </summary>
         /// <param name="access_token"></param>
-        /// <param name="refresh_token"></param>
-        /// <param name="expires_in"></param>
-        public void OnTokenUpdated(string access_token, string refresh_token, DateTime expires_in)
+        public void OnTokenUpdated(string access_token)
         {
             var settings = ACDSettings.Default;
             settings.AuthToken = access_token;
-            settings.AuthRenewToken = refresh_token;
-            settings.AuthTokenExpiration = expires_in;
             settings.Save();
         }
 

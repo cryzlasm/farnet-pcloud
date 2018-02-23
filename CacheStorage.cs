@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-namespace FarNet.ACD
+
+namespace FarNet.PCloud
 {
     class CacheStorage
     {

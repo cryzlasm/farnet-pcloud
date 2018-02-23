@@ -4,7 +4,7 @@ using FarNet.Forms;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace FarNet.ACD
+namespace FarNet.PCloud
 {
     class AutoRetryDialog : Form
     {

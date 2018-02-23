@@ -5,10 +5,10 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Threading;
-using FarNet.ACD.Exceptions;
+using FarNet.PCloud.Exceptions;
 using Azi.Amazon.CloudDrive;
 
-namespace FarNet.ACD
+namespace FarNet.PCloud
 {
     /// <summary>
     /// Panel file explorer to view .resources file data.
@@ -901,8 +901,11 @@ namespace FarNet.ACD
                         var itemData = Client.FetchNode(Path.Combine(Far.Api.Panel.CurrentDirectory, file.Name));
                         itemData.Wait();
                         var item = itemData.Result;
-                        Task downloadTask = Client.DeleteFile(item, form);
-                        downloadTask.Wait();
+                        if (item != null)
+                        {
+                            Task deleteTask = Client.DeleteFile(item, form);
+                            deleteTask.Wait();
+                        }
                     }
                     catch (AggregateException ae)
                     {
@@ -1042,6 +1045,8 @@ namespace FarNet.ACD
         /// Reset Event that is used to pause threads
         /// </summary>
         /// <param name="message"></param>
+        /// <param name="title"></param>
+        /// <param name="form"></param>
         /// <returns></returns>
         private ManualResetEvent GetResetEvent(string message, string title, Tools.ProgressForm form)
         {
@@ -1115,9 +1120,7 @@ namespace FarNet.ACD
         /// <summary>
         /// TODO
         /// </summary>
-        /// <param name="file"></param>
-        /// <param name="parentItem"></param>
-        /// <param name="form"></param>
+        /// <param name="FileData"></param>
         private long DoUpload(UploadFileData FileData)
         {
             Exception exists = null;
@@ -1174,9 +1177,7 @@ namespace FarNet.ACD
         /// <summary>
         /// TODO
         /// </summary>
-        /// <param name="file"></param>
-        /// <param name="parentItem"></param>
-        /// <param name="form"></param>
+        /// <param name="FileData"></param>
         private long DoReplace(UploadFileData FileData)
         {
             Task<long> replaceTask = Client.ReplaceFile(FileData);
@@ -1210,6 +1211,15 @@ namespace FarNet.ACD
             return FileData.TotalProgress;
         }
 
+
+        /// <summary>
+        /// TODO
+        /// </summary>
+        /// <param name="Files"></param>
+        /// <param name="FillFiles"></param>
+        /// <param name="FillDirs"></param>
+        /// <param name="DirectoryName"></param>
+        /// <returns></returns>
         private long FillFilesAndDirectories(IList<FarFile> Files, Dictionary<string, FarFile> FillFiles, Dictionary<string, FarFile> FillDirs, string DirectoryName)
         {
             long result = 0;
@@ -1233,6 +1243,9 @@ namespace FarNet.ACD
         /// TODO
         /// </summary>
         /// <param name="Files"></param>
+        /// <param name="DirectoryName"></param>
+        /// <param name="Form"></param>
+        /// <param name="Size"></param>
         /// <returns></returns>
         private Dictionary<string, FarFile> GetRemoteFarFilesRecursive(IList<FarFile> Files, string DirectoryName, Tools.ProgressForm Form, out long Size)
         {
@@ -1277,6 +1290,8 @@ namespace FarNet.ACD
         /// TODO
         /// </summary>
         /// <param name="Files"></param>
+        /// <param name="DirectoryName"></param>
+        /// <param name="Size"></param>
         /// <returns></returns>
         private List<FarFile> GetLocalFarFilesRecursive(IList<FarFile> Files, string DirectoryName, out long Size)
         {
@@ -1410,7 +1425,6 @@ namespace FarNet.ACD
                     failure = null;
                     retryUserChoice = dlg.Display();
                     pauseThreadEvent.Set();
-                    return;
                 }
             };
 
@@ -1426,6 +1440,7 @@ namespace FarNet.ACD
         /// TODO
         /// </summary>
         /// <param name="Path"></param>
+        /// <param name="RetryDialogResult"></param>
         /// <returns></returns>
         public IList<FarFile> GetACDFiles(string Path, ref int RetryDialogResult)
         {
